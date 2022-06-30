@@ -14,8 +14,12 @@ usersRouter.get("/googleRedirect", passport.authenticate("google", { session: fa
   // The purpose of this endpoint is to receive a response from Google, execute the google callback function, then send a response to the client
   try {
     const { accessToken, refreshToken } = req.user // passportNext is adding accessToken and refreshToken to req.user
-    // res.send({ accessToken, refreshToken })
-    res.redirect(`${process.env.FE_URL}/users?accessToken=${accessToken}&refreshToken=${refreshToken}`)
+
+    // as an alternative to url search params we could use cookies
+    // res.redirect(`${process.env.FE_URL}/users?accessToken=${accessToken}&refreshToken=${refreshToken}`)
+    res.cookie("accessToken", accessToken, { httpOnly: true, secure: process.env.NODE_ENV === "production" ? true : false, sameSite: "none" })
+    res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production" ? true : false, sameSite: "none" })
+    res.redirect(`${process.env.FE_URL}/users`)
   } catch (error) {
     next(error)
   }
@@ -117,8 +121,9 @@ usersRouter.post("/login", async (req, res, next) => {
     if (user) {
       // 3. If credentials are fine --> generate an access token & refresh token (JWT) then send them as a response
       const { accessToken, refreshToken } = await authenticateUser(user)
-
-      res.send({ accessToken, refreshToken })
+      res.cookie("accessToken", accessToken, { httpOnly: true, secure: process.env.NODE_ENV === "production" ? true : false, sameSite: "none" })
+      res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production" ? true : false, sameSite: "none" })
+      res.send()
     } else {
       // 4. If credentials are not ok --> throw an error (401)
       next(createError(401, "Credentials are not ok!"))
@@ -131,13 +136,15 @@ usersRouter.post("/login", async (req, res, next) => {
 usersRouter.post("/refreshTokens", async (req, res, next) => {
   try {
     // 1. Obtain refreshToken from req.body
-    const { currentRefreshToken } = req.body
+    const currentRefreshToken = req.cookies.refreshToken
 
     // 2. Check the validity of that token (check if it is not expired, check if it hasn'been compromised, check if it is the same as the one we have in db)
     // 3. If everything is fine --> generate a new pair of tokens (accessToken2 & refreshToken2)
     const { accessToken, refreshToken } = await verifyRefreshTokenAndGenerateNewTokens(currentRefreshToken)
     // 4. Send them back as a response
-    res.send({ accessToken, refreshToken })
+    res.cookie("accessToken", accessToken, { httpOnly: true, secure: process.env.NODE_ENV === "production" ? true : false, sameSite: "none" })
+    res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production" ? true : false, sameSite: "none" })
+    res.send()
   } catch (error) {
     next(error)
   }
