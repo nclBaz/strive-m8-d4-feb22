@@ -1,5 +1,6 @@
 import express from "express"
 import createError from "http-errors"
+import passport from "passport"
 import { adminOnlyMiddleware } from "../../auth/admin.js"
 import { basicAuthMiddleware } from "../../auth/basic.js"
 import { JWTAuthMiddleware } from "../../auth/token.js"
@@ -7,6 +8,18 @@ import { authenticateUser, verifyRefreshTokenAndGenerateNewTokens } from "../../
 import UsersModel from "./model.js"
 
 const usersRouter = express.Router()
+
+usersRouter.get("/googleLogin", passport.authenticate("google", { scope: ["profile", "email"] })) // The purpose of this endpoint is to redirect users to Google Consent Screen
+usersRouter.get("/googleRedirect", passport.authenticate("google", { session: false }), (req, res, next) => {
+  // The purpose of this endpoint is to receive a response from Google, execute the google callback function, then send a response to the client
+  try {
+    const { accessToken, refreshToken } = req.user // passportNext is adding accessToken and refreshToken to req.user
+    // res.send({ accessToken, refreshToken })
+    res.redirect(`${process.env.FE_URL}/users?accessToken=${accessToken}&refreshToken=${refreshToken}`)
+  } catch (error) {
+    next(error)
+  }
+})
 
 usersRouter.post("/", async (req, res, next) => {
   try {
