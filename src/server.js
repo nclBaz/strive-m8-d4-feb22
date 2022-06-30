@@ -3,6 +3,7 @@ import mongoose from "mongoose"
 import listEndpoints from "express-list-endpoints"
 import cors from "cors"
 import passport from "passport"
+import cookieParser from "cookie-parser"
 import usersRouter from "./api/users/index.js"
 import { unauthorizedHandler, forbiddenHandler, catchAllHandler } from "./errorHandlers.js"
 import googleStrategy from "./auth/googleOAuth.js"
@@ -15,7 +16,8 @@ passport.use("google", googleStrategy) // Do not forget to inform passport that 
 
 // ************************************** MIDDLEWARES *****************************************
 
-server.use(cors())
+server.use(cors({ origin: "http://localhost:3000", credentials: true }))
+server.use(cookieParser())
 server.use(express.json())
 server.use(passport.initialize()) // Do not forget to inform express that we will be using passport
 

@@ -3,12 +3,13 @@ import { verifyAccessToken } from "./tools.js"
 
 export const JWTAuthMiddleware = async (req, res, next) => {
   // 1. Check if authorization header is in the request, if it is not --> 401
-  if (!req.headers.authorization) {
-    next(createHttpError(401, "Please provide Bearer Token in the authorization header!"))
+  console.log("COOKIES: ", req.cookies)
+  if (!req.cookies.accessToken) {
+    next(createHttpError(401, "Please provide access token in cookies!"))
   } else {
     try {
-      // 2. If authorization header is there we can extract the token from it (Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MmJhYzg1NmRkMzM5YTBmNzU2OGVhNjEiLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE2NTY0OTI5MTMsImV4cCI6MTY1NzA5NzcxM30.VdPVmNkUGOvSf4y39rMuXPI_aaafxexqU65Q2Jgbefo")
-      const token = req.headers.authorization.replace("Bearer ", "")
+      // 2. Extract token from cookies
+      const token = req.cookies.accessToken
 
       // 3. Verify token (check the expiration date and check the signature integrity), if everything is fine we should get back the payload ({_id, role})
       const payload = await verifyAccessToken(token)
